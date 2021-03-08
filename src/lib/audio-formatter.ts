@@ -2,7 +2,12 @@ import jsmediatags from "jsmediatags";
 import { jsmediatagsError, TagType, Tags, TagFrame } from "jsmediatags/types";
 import path from "path";
 
-export default class AudioFormatter
+export type FormattedAudio = {
+    path: string;
+    name: string;
+}
+
+export class AudioFormatter
 {
     format: string;
     outputFolder: string;
@@ -31,12 +36,8 @@ export default class AudioFormatter
     }
 
     // returns both intended filename and valid filepath (without illegal characters)
-    public async formatOutput(audioPath: string)
+    public async formatOutput(audioPath: string): Promise<FormattedAudio>
     {
-        // const _ffprobe = util.promisify(Ffmpeg.ffprobe);
-        // const command = Ffmpeg(test)
-        //     .ffprobe((err, data) => console.log(data));
-        
         const audioMeta = await this.getTags(audioPath);
         const params = Object.entries(audioMeta.tags).reduce<{ [key: string]: string }>((acc, [tag, v]) => (acc[`%${tag.toLowerCase()}%`] = v?.toString() ?? "", acc), {});
 
