@@ -8,11 +8,14 @@ class Ytmusicconverter extends Command {
 	static description = "merges music and static image into a video"
 
 	static flags = {
-		version: flags.version({char: "v"}),
-		help: flags.help({char: "h"}),
+		version: flags.version({ char: "v" }),
+		help: flags.help({ char: "h" }),
 
-		name: flags.string({char: "n", description: "name to print"}),
-		force: flags.boolean({char: "f"}),
+		ffmpegWorkers: flags.integer({ char: "w", description: "max concucurrent ffmpeg workers", default: config.maxConcurrentConvert }),
+		audioPattern: flags.string({ char: "a", description: "glob pattern to resolve audio tracks", default: config.audioGlob }),
+		imagePattern: flags.string({ char: "i", description: "glob pattern to resolve image used", default: config.imageGlob }),
+		convertPattern: flags.string({ char: "c", description: "naming pattern for output files", default: config.namingPattern })
+
 	}
 
 	static args = [
@@ -41,10 +44,10 @@ class Ytmusicconverter extends Command {
 		// 	this.log(`you input --force and --file: ${args.file}`)
 		// }
 		
-		const audio = await matchFiles(config.audioGlob, args.input);
-		const covers = await matchFiles(config.imageGlob, args.input);
+		const audio = await matchFiles(flags.audioPattern, args.input);
+		const covers = await matchFiles(flags.imagePattern, args.input);
 		
-		const conversions = await convertToVideoBulk(covers, audio, args.output, config.namingPattern, config.maxConcurrentConvert);
+		const conversions = await convertToVideoBulk(covers, audio, args.output, flags.convertPattern, flags.ffmpegWorkers);
 		
 		const tasks = new Listr([
 			{
