@@ -44,7 +44,7 @@ class Ytmusicconverter extends Command {
 		const audio = await matchFiles(config.audioGlob, args.input);
 		const covers = await matchFiles(config.imageGlob, args.input);
 		
-		const conversions = await convertToVideoBulk(covers, audio, args.output, config.namingPattern);
+		const conversions = await convertToVideoBulk(covers, audio, args.output, config.namingPattern, config.maxConcurrentConvert);
 		
 		const tasks = new Listr([
 			{

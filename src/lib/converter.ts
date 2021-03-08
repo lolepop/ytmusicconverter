@@ -4,6 +4,9 @@ import path from "path";
 import fs from "fs";
 import glob from "glob";
 import AudioFormatter from "./audio-formatter";
+import { promise as fastq } from "fastq"
+
+const defaultFfmpegCfg = { videoHeight: 1080, framerate: 1 };
 
 export async function matchFiles(globPattern: string, audioPath?: string)
 {
@@ -37,11 +40,14 @@ export function resolveAudioCodec(format: string)
 }
 
 type UnwrapPromise<T> = T extends PromiseLike<infer U> ? U : T;
-
 type FormattedPath = UnwrapPromise<ReturnType<typeof matchFiles>>;
-const defaultFfmpegCfg = { videoHeight: 1080, framerate: 1 };
-export async function convertToVideoBulk(coverPath: FormattedPath, audioPath: FormattedPath, outputFolder: string, outputFormat: string, cfg: typeof defaultFfmpegCfg = defaultFfmpegCfg)
+type convertArgs = [typeof convertToVideo, Parameters<typeof convertToVideo>];
+
+
+export async function convertToVideoBulk(coverPath: FormattedPath, audioPath: FormattedPath, outputFolder: string, outputFormat: string, maxConcurrent: number, cfg: typeof defaultFfmpegCfg = defaultFfmpegCfg)
 {
+    const convert = fastq(null, ([f, a]: convertArgs) => f(...a), maxConcurrent);
+    
     const audioFormatter = new AudioFormatter(outputFolder, outputFormat);
 
     const promises = await Promise.all(Object.entries(coverPath).flatMap(([base, image]) => {
@@ -54,7 +60,7 @@ export async function convertToVideoBulk(coverPath: FormattedPath, audioPath: Fo
 
             return {
                 args: { imagePath, audioPath, outputFile },
-                result: convertToVideo(imagePath, audioPath, outputFile.path, cfg)
+                result: convert.push([convertToVideo, [imagePath, audioPath, outputFile.path, cfg]])
             };
         });
     }));

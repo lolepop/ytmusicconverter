@@ -1,5 +1,6 @@
 {
     "audioGlob": "**/*.@(flac|mp3)",
     "imageGlob": "**/*.@(png|jpg)",
-    "namingPattern": "%artist% - %title%"
+    "namingPattern": "%artist% - %title%",
+    "maxConcurrentConvert": 5
 }
