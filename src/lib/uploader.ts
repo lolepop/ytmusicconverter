@@ -38,7 +38,7 @@ export abstract class VideoUploader
     }
 
     abstract upload(file: FormattedAudio, description: string, privacy: string): Promise<any>;
-    abstract uploadAll(description: string, privacy: string): ArgPromise<any, any>[];
+    abstract uploadAll(description: string, privacy: string, uploadWorkers: number): ArgPromise<any, any>[];
 
 }
 
@@ -61,13 +61,13 @@ export class YoutubeUploader extends VideoUploader
         await initYoutube(this.credentials);
     }
 
-    uploadAll(description: string, privacy: string)
+    uploadAll(description: string, privacy: string, uploadWorkers: number)
     {
         const convert = fastq(null, async ([f, completeCb]: [() => Promise<any>, () => Promise<any>]) => {
             const r = await f();
             await completeCb();
             return r;
-        }, 2);
+        }, uploadWorkers);
         
         // stopped working after adding the queue. only works with a copy now for some reason
         return [...this.videos].map(f => {

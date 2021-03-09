@@ -12,8 +12,8 @@ export default class Uploader extends Command
 		version: flags.version({ char: "v" }),
 		help: flags.help({ char: "h" }),
 
-        description: flags.string({ char: "d" })
-
+        description: flags.string({ char: "d", description: "description of uploaded video", default: "" }),
+		uploadWorkers: flags.integer({ char: "w", description: "number of concurrent uploads at once", default: 2 })
 	};
 
 	static args = [
@@ -40,7 +40,7 @@ export default class Uploader extends Command
 
 		await uploader.setup(args.input);
 		
-		const uploads = uploader.uploadAll(flags.description ?? "", "PRIVATE");
+		const uploads = uploader.uploadAll(flags.description, "PRIVATE", flags.uploadWorkers);
 
 		const tasks = new Listr([
 			{

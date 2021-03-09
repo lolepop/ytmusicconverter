@@ -9,7 +9,7 @@ import low from "lowdb";
 import FileAsync from "lowdb/adapters/FileAsync";
 import { bindArgs, UnwrapPromise } from "./util";
 
-const defaultFfmpegCfg = { videoHeight: 1080, framerate: 1 };
+const defaultFfmpegCfg = { framerate: 1 };
 
 export async function matchFiles(globPattern: string, audioPath?: string)
 {
@@ -49,7 +49,7 @@ export interface ConvertedSchema
 
 type FormattedPath = UnwrapPromise<ReturnType<typeof matchFiles>>;
 
-export async function convertToVideoBulk(coverPath: FormattedPath, audioPath: FormattedPath, outputFolder: string, outputFormat: string, maxConcurrent: number, cfg: typeof defaultFfmpegCfg = defaultFfmpegCfg)
+export async function convertToVideoBulk(coverPath: FormattedPath, audioPath: FormattedPath, outputFolder: string, outputFormat: string, maxConcurrent: number, videoHeight: number, cfg: typeof defaultFfmpegCfg = defaultFfmpegCfg)
 {
     const convert = fastq(null, async ([updateDbSuccess, f]: [() => Promise<any>, () => ReturnType<typeof convertToVideo>]) => {
         const r = await f();
@@ -80,7 +80,7 @@ export async function convertToVideoBulk(coverPath: FormattedPath, audioPath: Fo
                 .get("videos")
                 .push(outputFile)
                 .write();
-            const conversionFunc = bindArgs(convertToVideo)(imagePath, audioPath, outputFile, cfg);
+            const conversionFunc = bindArgs(convertToVideo)(imagePath, audioPath, outputFile, videoHeight, cfg);
 
             return {
                 args: { imagePath, audioPath, outputFile },
@@ -93,7 +93,7 @@ export async function convertToVideoBulk(coverPath: FormattedPath, audioPath: Fo
     
 }
 
-export async function convertToVideo(coverPath: string, audioPath: string, output: FormattedAudio | AudioFormatter, { videoHeight, framerate } = defaultFfmpegCfg)
+export async function convertToVideo(coverPath: string, audioPath: string, output: FormattedAudio | AudioFormatter, videoHeight: number, { framerate } = defaultFfmpegCfg)
 {
     const outputFile = (output instanceof AudioFormatter ? await output.formatOutput(audioPath) : output).path;
     const audioCodec = resolveAudioCodec(path.extname(audioPath).substr(1));
