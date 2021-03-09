@@ -5,10 +5,11 @@ import fs from "fs";
 import glob from "glob";
 import { AudioFormatter, FormattedAudio } from "./audio-formatter";
 import { promise as fastq } from "fastq";
-import low, { LowdbAsync } from "lowdb";
+import low from "lowdb";
 import FileAsync from "lowdb/adapters/FileAsync";
+import { bindArgs, UnwrapPromise } from "./util";
 
-const defaultFfmpegCfg = { videoHeight: 2160, framerate: "1/10" };
+const defaultFfmpegCfg = { videoHeight: 1080, framerate: 1 };
 
 export async function matchFiles(globPattern: string, audioPath?: string)
 {
@@ -46,22 +47,14 @@ export interface ConvertedSchema
     videos: FormattedAudio[]
 }
 
-type UnwrapPromise<T> = T extends PromiseLike<infer U> ? U : T;
 type FormattedPath = UnwrapPromise<ReturnType<typeof matchFiles>>;
-type SingleConvertArgs = [LowdbAsync<ConvertedSchema>, typeof convertToVideo, Parameters<typeof convertToVideo>];
 
 export async function convertToVideoBulk(coverPath: FormattedPath, audioPath: FormattedPath, outputFolder: string, outputFormat: string, maxConcurrent: number, cfg: typeof defaultFfmpegCfg = defaultFfmpegCfg)
 {
-    const convert = fastq(null, async ([db, f, a]: SingleConvertArgs) => {
-        const r = await f(...a);
-        
-        await db
-            .get("videos")
-            .push(a[2] as FormattedAudio)
-            .write();
-
+    const convert = fastq(null, async ([updateDbSuccess, f]: [() => Promise<any>, () => ReturnType<typeof convertToVideo>]) => {
+        const r = await f();
+        await updateDbSuccess();
         return r;
-
     }, maxConcurrent);
     
     const audioFormatter = new AudioFormatter(outputFolder, outputFormat);
@@ -82,10 +75,16 @@ export async function convertToVideoBulk(coverPath: FormattedPath, audioPath: Fo
         return Promise.all(audioFiles.map(async audio => {
             const audioPath = path.join(base, audio);
             const outputFile = await audioFormatter.formatOutput(audioPath);
+            
+            const dbSuccessCallback = () => db
+                .get("videos")
+                .push(outputFile)
+                .write();
+            const conversionFunc = bindArgs(convertToVideo)(imagePath, audioPath, outputFile, cfg);
 
             return {
                 args: { imagePath, audioPath, outputFile },
-                result: convert.push([db, convertToVideo, [imagePath, audioPath, outputFile, cfg]])
+                result: convert.push([dbSuccessCallback, conversionFunc])
             };
         }));
     }));

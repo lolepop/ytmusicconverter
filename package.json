@@ -16,7 +16,8 @@
 		"jsmediatags": "^3.9.5",
 		"listr": "^0.14.3",
 		"lowdb": "^1.0.0",
-		"tslib": "^1.14.1"
+		"tslib": "^1.14.1",
+		"youtube-studio": "0.0.15"
 	},
 	"devDependencies": {
 		"@oclif/dev-cli": "^1.26.0",

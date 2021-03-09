@@ -1,5 +1,8 @@
 import {Command, flags} from "@oclif/command";
+import Listr from "listr";
 import path from "path";
+import { YoutubeUploader } from "../lib/uploader";
+const config = require("../../config.json");
 
 export default class Uploader extends Command
 {
@@ -26,7 +29,30 @@ export default class Uploader extends Command
     {
 		const {args, flags} = this.parse(Uploader);
 
-		// load db records and upload
+		const uploader = new YoutubeUploader(config.channelId, {
+			APISID: config.APISID,
+			HSID: config.HSID,
+			SAPISID: config.SAPISID,
+			SID: config.SID,
+			LOGIN_INFO: config.LOGIN_INFO,
+			SSID: config.SSID,
+		});
+
+		await uploader.setup(args.input);
 		
+		const uploads = uploader.uploadAll(flags.description ?? "", "PRIVATE");
+
+		const tasks = new Listr([
+			{
+				title: "Uploading files",
+				task: () => new Listr(uploads.map(p => ({
+					title: p.args.name,
+					task: () => p.result
+				})), { concurrent: true, exitOnError: false })
+			}
+		]);
+
+		tasks.run();
+
 	}
 }
