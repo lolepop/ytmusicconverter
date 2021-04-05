@@ -43,13 +43,15 @@ export default class Converter extends Command
 
 		if (flags.tag !== undefined)
 		{
-			console.log((await AudioFormatter.getTags(path.resolve(args.input, flags.tag))).tags);
+			const p = path.resolve(args.input, flags.tag);
+			console.dir(await AudioFormatter.getTags(p), { depth: 0 });
+			console.dir(await new AudioFormatter(args.input, flags.convertPattern).formatOutput(p));
 			return;
 		}
 
 		const audio = await matchFiles(flags.audioPattern, args.input);
 		const covers = await matchFiles(flags.imagePattern, args.input);
-		
+
 		const conversions = await convertToVideoBulk(covers, audio, args.output, flags.convertPattern, flags.ffmpegWorkers, flags.resolution);
 		
 		const tasks = new Listr([

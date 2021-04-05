@@ -1,5 +1,4 @@
-import jsmediatags from "jsmediatags";
-import { jsmediatagsError, TagType, Tags, TagFrame } from "jsmediatags/types";
+import * as mm from "music-metadata";
 import path from "path";
 
 export type FormattedAudio = {
@@ -29,17 +28,25 @@ export class AudioFormatter
 
     public static async getTags(file: string)
     {
-        return new Promise((resolve: (r: TagType) => void, reject: (e: jsmediatagsError) => void) => jsmediatags.read(file, {
-            onSuccess: resolve,
-            onError: reject
-        }));
+        const meta = await mm.parseFile(file);
+        return Object.entries(meta.native).reduce<{ [key: string]: any }>((acc, [_, v]) => {
+            for (const tag of v)
+                acc[tag.id] = acc[tag.id] ?? tag.value;
+            return acc;
+        }, {});
+
+        // return new Promise((resolve: (r: TagType) => void, reject: (e: jsmediatagsError) => void) => jsmediatags.read(file, {
+        //     onSuccess: resolve,
+        //     onError: reject
+        // }));
     }
 
     // returns both intended filename and valid filepath (without illegal characters)
     public async formatOutput(audioPath: string): Promise<FormattedAudio>
     {
         const audioMeta = await AudioFormatter.getTags(audioPath);
-        const params = Object.entries(audioMeta.tags).reduce<{ [key: string]: string }>((acc, [tag, v]) => (acc[`%${tag.toLowerCase()}%`] = v?.toString() ?? "", acc), {});
+        // const audioMeta = { tags: [ "asdf" ] };
+        const params = Object.entries(audioMeta).reduce<{ [key: string]: string }>((acc, [tag, v]) => (acc[`%${tag.toLowerCase()}%`] = v?.toString() ?? "", acc), {});
 
         const formattedName = this.format.replace(this.formatRegex, s => params[s.toLowerCase()]);
         return {

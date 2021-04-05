@@ -59,15 +59,15 @@ export async function convertToVideoBulk(coverPath: FormattedPath, audioPath: Fo
     
     const audioFormatter = new AudioFormatter(outputFolder, outputFormat);
 
+    // account for filenames that cannot exist on filesystem
+    const db = await low(new FileAsync<ConvertedSchema>(path.join(outputFolder, "results.json")));
+    await db.defaults({ videos: [] })
+        .get("videos")
+        .remove(() => true)
+        .write();
+
     // flatmap doesnt work on Promise<>[] lol
     const promises = await Promise.all(Object.entries(coverPath).map(async ([base, image]) => {
-        // account for filenames that cannot exist on filesystem
-        const db = await low(new FileAsync<ConvertedSchema>(path.join(outputFolder, "results.json")));
-        await db.defaults({ videos: [] })
-            .get("videos")
-            .remove(() => true)
-            .write();
-
         const audioFiles = audioPath[base] ?? [];
         const imagePath = path.join(base, image[0]);
 
