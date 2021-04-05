@@ -27,7 +27,7 @@ export class AudioFormatter
         this.formatRegex = new RegExp(`${this.esc.source}${this.inner.source}${this.esc.source}`, "g");
     }
 
-    private async getTags(file: string)
+    public static async getTags(file: string)
     {
         return new Promise((resolve: (r: TagType) => void, reject: (e: jsmediatagsError) => void) => jsmediatags.read(file, {
             onSuccess: resolve,
@@ -38,7 +38,7 @@ export class AudioFormatter
     // returns both intended filename and valid filepath (without illegal characters)
     public async formatOutput(audioPath: string): Promise<FormattedAudio>
     {
-        const audioMeta = await this.getTags(audioPath);
+        const audioMeta = await AudioFormatter.getTags(audioPath);
         const params = Object.entries(audioMeta.tags).reduce<{ [key: string]: string }>((acc, [tag, v]) => (acc[`%${tag.toLowerCase()}%`] = v?.toString() ?? "", acc), {});
 
         const formattedName = this.format.replace(this.formatRegex, s => params[s.toLowerCase()]);

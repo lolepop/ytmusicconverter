@@ -2,6 +2,7 @@ import {Command, flags} from "@oclif/command";
 import { convertToVideo, convertToVideoBulk, matchFiles } from "../lib/converter";
 import Listr = require("listr");
 import path from "path";
+import { AudioFormatter } from "../lib/audio-formatter";
 const config = require("../../config.json");
 
 export default class Converter extends Command
@@ -16,6 +17,7 @@ export default class Converter extends Command
 		audioPattern: flags.string({ char: "a", description: "glob pattern to resolve audio tracks", default: config.audioGlob }),
 		imagePattern: flags.string({ char: "i", description: "glob pattern to resolve image used", default: config.imageGlob }),
 		convertPattern: flags.string({ char: "c", description: "naming pattern for output files", default: config.namingPattern }),
+		tag: flags.string({ char: "t", description: "display tags for a file and its labels" }),
 
 		resolution: flags.integer({ char: "r", description: "output resolution of video (fix height, scale width)", default: 1080 })
 	};
@@ -23,19 +25,27 @@ export default class Converter extends Command
 	static args = [
 		{
 			name: "input",
-			required: true,
-			parse: (a: string) => path.resolve(a)
+			required: false,
+			parse: (a: string) => path.resolve(a),
+			default: path.resolve(".")
 		},
 		{
 			name: "output",
-			required: true,
-			parse: (a: string) => path.resolve(a)
+			required: false,
+			parse: (a: string) => path.resolve(a),
+			default: path.resolve("./out")
 		}
 	];
 
 	async run()
 	{
 		const {args, flags} = this.parse(Converter);
+
+		if (flags.tag !== undefined)
+		{
+			console.log((await AudioFormatter.getTags(path.resolve(args.input, flags.tag))).tags);
+			return;
+		}
 
 		const audio = await matchFiles(flags.audioPattern, args.input);
 		const covers = await matchFiles(flags.imagePattern, args.input);
