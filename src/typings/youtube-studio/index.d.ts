@@ -9,6 +9,7 @@ declare module "youtube-studio"
         APISID: string;
         SAPISID: string;
         LOGIN_INFO?: string;
+        SESSION_TOKEN?: string;
     }
 
     // export enum VideoPrivacy

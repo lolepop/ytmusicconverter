@@ -2,7 +2,7 @@ import {Command, flags} from "@oclif/command";
 import Listr from "listr";
 import path from "path";
 import { YoutubeUploader } from "../lib/uploader";
-const config = require("../../config.json");
+const config = require("../../youtube.json");
 
 export default class Uploader extends Command
 {
@@ -36,11 +36,14 @@ export default class Uploader extends Command
 			SID: config.SID,
 			LOGIN_INFO: config.LOGIN_INFO,
 			SSID: config.SSID,
+			SESSION_TOKEN: config.SESSION_TOKEN
 		});
-
-		await uploader.setup(args.input);
 		
+		await uploader.setup(args.input);
+
 		const uploads = uploader.uploadAll(flags.description, "PRIVATE", flags.uploadWorkers);
+
+		// await Promise.all(uploads.map(a => a.result));
 
 		const tasks = new Listr([
 			{

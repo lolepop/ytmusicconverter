@@ -58,7 +58,15 @@ export class YoutubeUploader extends VideoUploader
     async setup(dbPath: string)
     {
         await super.setup(dbPath);
-        await initYoutube(this.credentials);
+        try
+        {
+            await initYoutube(this.credentials);
+        }
+        catch (error)
+        {
+            console.log(error);
+            throw error;
+        }
     }
 
     uploadAll(description: string, privacy: string, uploadWorkers: number)
@@ -84,17 +92,26 @@ export class YoutubeUploader extends VideoUploader
 
     async upload(file: FormattedAudio, description: string, privacy: string)
     {
-        const uploadResult = await uploadYoutube({
-            stream: fs.createReadStream(file.path),
-            channelId: this.channelId,
+        try {
+            const uploadResult = await uploadYoutube({
+                stream: fs.createReadStream(file.path),
+                channelId: this.channelId,
+    
+                newTitle: file.name,
+                newDescription: description,
+                newPrivacy: privacy,
+    
+                isDraft: false,
+            });
+            
+            // console.log(file.name, uploadResult.videoId);
+            
+            return uploadResult;
+            
+        } catch (error) {
+            console.log(error);
+            throw error;
+        }
 
-            newTitle: file.name,
-            newDescription: description,
-            newPrivacy: privacy,
-
-            isDraft: false,
-        });
-
-        return uploadResult;
     }
 }
